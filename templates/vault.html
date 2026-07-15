@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Cofre de Segredos</h1>
+<div class="subtitle">Logins/senhas/tokens ficam criptografados em disco e nunca aparecem em texto puro em logs ou relatórios.</div>
+
+{% if not vault_unlocked %}
+<div class="panel">
+  <h3 class="lock-icon">🔒 Cofre travado</h3>
+  <form method="post" action="{{ url_for('vault_unlock') }}">
+    <div class="form-row">
+      <label>Senha mestra {{ '(defina uma agora, primeiro uso)' if not keys else '' }}</label>
+      <input type="password" name="password" required>
+    </div>
+    <button class="btn btn-primary" type="submit">Destravar</button>
+  </form>
+</div>
+{% else %}
+<div class="panel">
+  <h3 class="unlock-icon">🔓 Cofre destravado</h3>
+  <table>
+    <tr><th>Chave</th><th></th></tr>
+    {% for k in keys %}
+    <tr>
+      <td>🔒 {{ k }}</td>
+      <td>
+        <form method="post" action="{{ url_for('vault_delete') }}" onsubmit="return confirm('Remover este segredo?')" style="display:inline">
+          <input type="hidden" name="key" value="{{ k }}">
+          <button class="btn btn-sm btn-danger" type="submit">Remover</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="2" style="color:var(--text-dim)">Nenhum segredo cadastrado ainda.</td></tr>
+    {% endfor %}
+  </table>
+
+  <form method="post" action="{{ url_for('vault_lock') }}">
+    <button class="btn" type="submit">Travar cofre</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h3>Adicionar / atualizar segredo</h3>
+  <form method="post" action="{{ url_for('vault_set') }}">
+    <div class="form-row">
+      <label>Nome (chave) — ex: senha_sistema_x</label>
+      <input type="text" name="key" required>
+    </div>
+    <div class="form-row">
+      <label>Valor (senha/token)</label>
+      <input type="password" name="value" required>
+    </div>
+    <button class="btn btn-primary" type="submit">Salvar (criptografado)</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

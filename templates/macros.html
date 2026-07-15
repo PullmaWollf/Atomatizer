@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Macros</h1>
+<div class="subtitle">Um macro = um fluxo repetitivo automatizado. O código nunca muda, só o macro.</div>
+
+<table>
+  <tr><th>Nome</th><th>URL inicial</th><th>Passos</th><th>Ações</th></tr>
+  {% for m in macros %}
+  <tr>
+    <td><a href="{{ url_for('macro_detail', name=m.name) }}" style="color:var(--cyan)">{{ m.name }}</a></td>
+    <td style="color:var(--text-dim)">{{ m.url or '-' }}</td>
+    <td><span class="badge badge-cyan">{{ m.steps }}</span></td>
+    <td>
+      <a class="btn btn-sm" href="{{ url_for('macro_detail', name=m.name) }}">Editar</a>
+      <a class="btn btn-sm" href="{{ url_for('macros_export', name=m.name) }}">Exportar</a>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" style="color:var(--text-dim)">Nenhum macro cadastrado ainda neste workspace.</td></tr>
+  {% endfor %}
+</table>
+
+<div class="panel">
+  <h3>Criar novo macro</h3>
+  <form method="post" action="{{ url_for('macros_create') }}">
+    <div class="form-row">
+      <label>Nome do macro (sem espaços/acentos)</label>
+      <input type="text" name="name" required>
+    </div>
+    <div class="form-row">
+      <label>URL inicial (ex: https://sistema.com/login)</label>
+      <input type="text" name="url">
+    </div>
+    <button class="btn btn-primary" type="submit">Criar e configurar passos</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h3>Importar macro (.json)</h3>
+  <form method="post" action="{{ url_for('macros_import') }}" enctype="multipart/form-data">
+    <div class="form-row">
+      <input type="file" name="file" accept=".json" required>
+    </div>
+    <button class="btn" type="submit">Importar</button>
+  </form>
+</div>
+{% endblock %}

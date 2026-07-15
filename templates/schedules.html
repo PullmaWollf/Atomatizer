@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Agendamentos</h1>
+<div class="subtitle">Roda um macro automaticamente em horário fixo, sem precisar abrir o programa.</div>
+
+<table>
+  <tr><th>Macro</th><th>Horário</th><th>Dias</th><th>Dados</th><th>Status</th><th>Ações</th></tr>
+  {% for it in itens %}
+  <tr>
+    <td>{{ it.macro }}</td>
+    <td>{{ it.time }}</td>
+    <td>
+      {% if 'todos' in it.days %}Todos os dias
+      {% else %}{% for d in it.days %}{{ weekday_labels.get(d, d) }}{{ ', ' if not loop.last }}{% endfor %}
+      {% endif %}
+    </td>
+    <td>{{ it.data_file or '-' }}</td>
+    <td>{% if it.enabled %}<span class="badge badge-green">ativo</span>{% else %}<span class="badge badge-yellow">pausado</span>{% endif %}</td>
+    <td>
+      <form method="post" action="{{ url_for('schedules_toggle', sid=it.id) }}" style="display:inline">
+        <button class="btn btn-sm" type="submit">{{ 'Pausar' if it.enabled else 'Ativar' }}</button>
+      </form>
+      <form method="post" action="{{ url_for('schedules_delete', sid=it.id) }}" style="display:inline" onsubmit="return confirm('Remover agendamento?')">
+        <button class="btn btn-sm btn-danger" type="submit">Remover</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" style="color:var(--text-dim)">Nenhum agendamento configurado.</td></tr>
+  {% endfor %}
+</table>
+
+<div class="panel">
+  <h3>Novo agendamento</h3>
+  <form method="post" action="{{ url_for('schedules_create') }}">
+    <div class="inline">
+      <div class="form-row" style="flex:1">
+        <label>Macro</label>
+        <select name="macro" required>{% for m in macros %}<option value="{{ m }}">{{ m }}</option>{% endfor %}</select>
+      </div>
+      <div class="form-row" style="flex:1">
+        <label>Horário (HH:MM, 24h)</label>
+        <input type="text" name="time" placeholder="08:30" required>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Arquivo de dados (opcional, para lote)</label>
+      <select name="data_file">
+        <option value="">— sem dados —</option>
+        {% for a in arquivos %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Dias (nenhum marcado = todos os dias)</label>
+      <div class="inline">
+        {% for d in weekdays %}
+        <label class="checkbox-row"><input type="checkbox" name="days" value="{{ d }}"> {{ weekday_labels[d] }}</label>
+        {% endfor %}
+      </div>
+    </div>
+    <button class="btn btn-primary" type="submit">Criar agendamento</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Configurações</h1>
+<div class="subtitle">Válidas para o workspace ativo (compartilhadas entre CLI e interface gráfica).</div>
+
+<div class="panel">
+  <form method="post" action="{{ url_for('settings_save') }}">
+    <div class="inline">
+      <div class="form-row" style="flex:1">
+        <label>Navegador</label>
+        <select name="browser_type">
+          {% for b in ['chrome', 'firefox', 'edge'] %}
+          <option value="{{ b }}" {{ 'selected' if settings.browser.type == b }}>{{ b }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row checkbox-row" style="flex:1; margin-top:22px;">
+        <input type="checkbox" name="headless" id="headless-cb" {{ 'checked' if settings.browser.headless }}>
+        <label for="headless-cb" style="margin:0">Headless (sem janela visível — recomendado)</label>
+      </div>
+    </div>
+    <div class="inline">
+      <div class="form-row" style="flex:1"><label>Largura da janela</label><input type="number" name="width" value="{{ settings.browser.window_size[0] }}"></div>
+      <div class="form-row" style="flex:1"><label>Altura da janela</label><input type="number" name="height" value="{{ settings.browser.window_size[1] }}"></div>
+      <div class="form-row" style="flex:1"><label>Espera implícita (s)</label><input type="number" step="0.5" name="implicit_wait" value="{{ settings.browser.implicit_wait }}"></div>
+    </div>
+    <div class="form-row">
+      <label>Profile do navegador (login salvo — caminho absoluto, opcional)</label>
+      <input type="text" name="profile_path" value="{{ settings.browser.profile_path or '' }}">
+    </div>
+    <div class="inline">
+      <div class="form-row" style="flex:1"><label>Tentativas extras em falha transitória</label><input type="number" name="default_retries" value="{{ settings.default_retries }}"></div>
+      <div class="form-row" style="flex:1"><label>Porta da interface gráfica</label><input type="number" name="gui_port" value="{{ settings.gui_port }}"></div>
+    </div>
+    <div class="form-row checkbox-row">
+      <input type="checkbox" name="screenshot_on_error" id="ss-cb" {{ 'checked' if settings.screenshot_on_error }}>
+      <label for="ss-cb" style="margin:0">Screenshot automático quando um passo falhar definitivamente</label>
+    </div>
+    <button class="btn btn-primary" type="submit">Salvar configurações</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Workspaces</h1>
+<div class="subtitle">Um workspace por cliente/projeto: macros, dados, logs, relatórios e cofre próprios.</div>
+
+<table>
+  <tr><th>Nome</th><th></th></tr>
+  {% for w in workspaces %}
+  <tr>
+    <td>📁 {{ w }} {% if w == workspace %}<span class="badge badge-green">ativo</span>{% endif %}</td>
+    <td>
+      {% if w != workspace %}
+      <form method="post" action="{{ url_for('workspaces_switch') }}" style="display:inline">
+        <input type="hidden" name="name" value="{{ w }}">
+        <button class="btn btn-sm" type="submit">Ativar</button>
+      </form>
+      {% endif %}
+      {% if w != 'default' %}
+      <form method="post" action="{{ url_for('workspaces_delete') }}" style="display:inline" onsubmit="return confirm('Excluir este workspace e TODOS os seus dados?')">
+        <input type="hidden" name="name" value="{{ w }}">
+        <button class="btn btn-sm btn-danger" type="submit">Excluir</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div class="panel">
+  <h3>Criar novo workspace</h3>
+  <form method="post" action="{{ url_for('workspaces_create') }}" class="inline">
+    <input type="text" name="name" placeholder="Nome do workspace (ex: cliente_x)" required>
+    <button class="btn btn-primary" type="submit">Criar</button>
+  </form>
+</div>
+{% endblock %}

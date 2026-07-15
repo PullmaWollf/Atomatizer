@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Logs (ao vivo)</h1>
+<div class="subtitle">Atualiza automaticamente a cada 2 segundos.</div>
+<pre id="log-box">Carregando...</pre>
+<script>
+async function atualizar() {
+  try {
+    const r = await fetch("{{ url_for('logs_tail') }}");
+    const data = await r.json();
+    const box = document.getElementById('log-box');
+    const estavaNoFim = box.scrollTop + box.clientHeight >= box.scrollHeight - 30;
+    box.textContent = data.lines;
+    if (estavaNoFim) box.scrollTop = box.scrollHeight;
+  } catch (e) { /* silencioso */ }
+}
+atualizar();
+setInterval(atualizar, 2000);
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Executar Macro</h1>
+<div class="subtitle">Roda um macro agora — sozinho ou em lote com um arquivo de dados.</div>
+
+<div class="panel">
+  <form method="post" action="{{ url_for('run_start') }}">
+    <div class="form-row">
+      <label>Macro</label>
+      <select name="macro" required>
+        {% for m in macros %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Arquivo de dados (opcional — para rodar em lote, um registro por linha)</label>
+      <select name="data_file">
+        <option value="">— rodar uma única vez, sem dados —</option>
+        {% for a in arquivos %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-row checkbox-row">
+      <input type="checkbox" name="ver_navegador" id="ver-cb">
+      <label for="ver-cb" style="margin:0">Ver o navegador rodando (janela visível, só para esta execução)</label>
+    </div>
+    <button class="btn btn-primary" type="submit">▶️ Iniciar execução</button>
+  </form>
+</div>
+
+{% if not macros %}
+<div class="panel"><p style="color:var(--text-dim)">Nenhum macro cadastrado ainda. <a href="{{ url_for('macros_list') }}" style="color:var(--cyan)">Crie um primeiro</a>.</p></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>{{ macro.name }}</h1>
+<div class="subtitle">
+  <form method="post" action="{{ url_for('macro_set_url', name=macro.name) }}" class="inline">
+    <input type="text" name="start_url" value="{{ macro.start_url }}" style="width:420px" placeholder="URL inicial">
+    <button class="btn btn-sm" type="submit">Salvar URL</button>
+  </form>
+</div>
+
+<table>
+  <tr><th>#</th><th>Ação</th><th>Localizador</th><th>Extras</th><th>Ações</th></tr>
+  {% for s in macro.steps %}
+  <tr>
+    <td>{{ s.id }}</td>
+    <td>{{ action_labels.get(s.action, s.action) }}</td>
+    <td style="color:var(--text-dim)">{{ s.locator_type or '-' }}='{{ s.locator_value or '-' }}'</td>
+    <td>
+      {% if s.optional %}<span class="badge badge-yellow">opcional</span>{% endif %}
+      {% if s.condition_type %}<span class="badge badge-purple">condição</span>{% endif %}
+      {% if s.fallback_locator_type %}<span class="badge badge-cyan">seletor alt.</span>{% endif %}
+      {% if s.value_source == 'vault' %}<span class="badge badge-green">🔒 cofre</span>{% endif %}
+    </td>
+    <td>
+      <form method="post" action="{{ url_for('step_move', name=macro.name, step_id=s.id, direction='up') }}" style="display:inline">
+        <button class="btn btn-sm" type="submit">↑</button>
+      </form>
+      <form method="post" action="{{ url_for('step_move', name=macro.name, step_id=s.id, direction='down') }}" style="display:inline">
+        <button class="btn btn-sm" type="submit">↓</button>
+      </form>
+      <form method="post" action="{{ url_for('step_delete', name=macro.name, step_id=s.id) }}" style="display:inline" onsubmit="return confirm('Remover este passo?')">
+        <button class="btn btn-sm btn-danger" type="submit">Remover</button>
+      </form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" style="color:var(--text-dim)">Nenhum passo ainda. Adicione o primeiro abaixo.</td></tr>
+  {% endfor %}
+</table>
+
+<div class="panel">
+  <h3>Adicionar novo passo</h3>
+  <form method="post" action="{{ url_for('step_add', name=macro.name) }}" id="step-form">
+
+    <div class="form-row">
+      <label>Ação</label>
+      <select name="action" id="action-select" onchange="onActionChange()">
+        {% for a in valid_actions %}
+        <option value="{{ a }}">{{ action_labels.get(a, a) }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Sub-macro -->
+    <div class="step-form-block" data-for="call_macro">
+      <div class="form-row">
+        <label>Qual macro chamar como sub-macro?</label>
+        <select name="submacro_name">
+          {% for m in other_macros %}<option value="{{ m }}">{{ m }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Laço -->
+    <div class="step-form-block" data-for="repeat_block">
+      <div class="inline">
+        <div class="form-row" style="flex:1"><label>Repetir a partir do passo #</label><input type="number" name="repeat_from_id"></div>
+        <div class="form-row" style="flex:1"><label>Repetir até o passo #</label><input type="number" name="repeat_to_id"></div>
+      </div>
+      <div class="inline">
+        <div class="form-row" style="flex:1"><label>Repetir N vezes (deixe vazio se usar "enquanto elemento presente")</label><input type="number" name="repeat_times"></div>
+      </div>
+      <div class="inline">
+        <div class="form-row" style="flex:1">
+          <label>OU: repetir enquanto este elemento estiver presente — tipo</label>
+          <select name="repeat_while_locator_type"><option value="">-</option>{% for t in locator_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select>
+        </div>
+        <div class="form-row" style="flex:1"><label>Valor do localizador</label><input type="text" name="repeat_while_locator_value"></div>
+      </div>
+    </div>
+
+    <!-- Localizador principal -->
+    <div class="step-form-block locator-block">
+      <div class="inline">
+        <div class="form-row" style="flex:1">
+          <label>Tipo de localizador</label>
+          <select name="locator_type"><option value="">-</option>{% for t in locator_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select>
+        </div>
+        <div class="form-row" style="flex:2"><label>Valor do localizador (ex: //button[@id='salvar'])</label><input type="text" name="locator_value"></div>
+      </div>
+      <div class="inline">
+        <div class="form-row" style="flex:1">
+          <label>Seletor ALTERNATIVO (self-healing, opcional) — tipo</label>
+          <select name="fallback_locator_type"><option value="">-</option>{% for t in locator_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select>
+        </div>
+        <div class="form-row" style="flex:2"><label>Valor do seletor alternativo</label><input type="text" name="fallback_locator_value"></div>
+      </div>
+    </div>
+
+    <!-- Valor / origem -->
+    <div class="step-form-block value-block">
+      <div class="inline">
+        <div class="form-row" style="flex:1">
+          <label>De onde vem o valor?</label>
+          <select name="value_source">
+            <option value="fixed">Texto fixo</option>
+            <option value="data">Coluna de arquivo de dados</option>
+            <option value="captured">Variável capturada</option>
+            <option value="vault">Cofre de segredos 🔒</option>
+          </select>
+        </div>
+        <div class="form-row" style="flex:2">
+          <label>Valor / nome da coluna / nome da variável / chave do cofre</label>
+          <input type="text" name="value" list="vault-keys">
+          <datalist id="vault-keys">
+            {% for k in vault_keys %}<option value="{{ k }}">{% endfor %}
+          </datalist>
+        </div>
+      </div>
+      <div class="form-row select-by-block">
+        <label>Selecionar &lt;select&gt; por</label>
+        <select name="select_by"><option value="text">Texto visível</option><option value="value">Atributo value</option><option value="index">Índice</option></select>
+      </div>
+    </div>
+
+    <div class="form-row generic-value-block">
+      <label>Valor (segundos de espera / mensagem / script JS / índice, conforme a ação)</label>
+      <input type="text" name="value">
+    </div>
+
+    <div class="form-row variable-name-block">
+      <label>Nome da variável para guardar o valor capturado</label>
+      <input type="text" name="variable_name">
+    </div>
+
+    <div class="form-row checkbox-row">
+      <input type="checkbox" name="optional" id="optional-cb"> <label for="optional-cb" style="margin:0">Passo opcional (não falha o macro se o elemento não existir)</label>
+    </div>
+
+    <h3>Condição (opcional)</h3>
+    <div class="inline">
+      <div class="form-row" style="flex:1">
+        <label>Tipo de condição</label>
+        <select name="condition_type" onchange="onConditionChange()" id="condition-select">
+          <option value="">Sem condição — sempre executa</option>
+          {% for c in condition_types %}<option value="{{ c }}">{{ condition_labels[c] }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="inline condition-locator-block" style="display:none">
+      <div class="form-row" style="flex:1">
+        <label>Tipo de localizador da condição</label>
+        <select name="condition_locator_type"><option value="">-</option>{% for t in locator_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select>
+      </div>
+      <div class="form-row" style="flex:1"><label>Valor do localizador da condição</label><input type="text" name="condition_locator_value"></div>
+    </div>
+    <div class="inline condition-variable-block" style="display:none">
+      <div class="form-row" style="flex:1"><label>Nome da variável</label><input type="text" name="condition_variable"></div>
+      <div class="form-row" style="flex:1"><label>Valor de comparação</label><input type="text" name="condition_value"></div>
+    </div>
+
+    <h3>Tempos</h3>
+    <div class="inline">
+      <div class="form-row" style="flex:1"><label>Aguardar ANTES (s)</label><input type="number" step="0.1" name="wait_before" value="0"></div>
+      <div class="form-row" style="flex:1"><label>Aguardar DEPOIS (s)</label><input type="number" step="0.1" name="wait_after" value="0"></div>
+      <div class="form-row" style="flex:1"><label>Timeout (s)</label><input type="number" step="0.1" name="timeout" value="10"></div>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Adicionar passo</button>
+  </form>
+</div>
+
+<div class="panel">
+  <h3>Duplicar / Renomear</h3>
+  <form method="post" action="{{ url_for('macros_duplicate', name=macro.name) }}" class="inline" style="margin-bottom:10px">
+    <input type="text" name="new_name" placeholder="Nome do novo macro" required>
+    <button class="btn" type="submit">Duplicar</button>
+  </form>
+  <form method="post" action="{{ url_for('macros_rename', name=macro.name) }}" class="inline" style="margin-bottom:10px">
+    <input type="text" name="new_name" placeholder="Novo nome" required>
+    <button class="btn" type="submit">Renomear</button>
+  </form>
+  <form method="post" action="{{ url_for('macros_delete', name=macro.name) }}" onsubmit="return confirm('Excluir este macro inteiro?')">
+    <button class="btn btn-danger" type="submit">Excluir macro inteiro</button>
+  </form>
+</div>
+
+<script>
+const NO_LOCATOR = {{ no_locator_actions | list | tojson }};
+const VALUE_ACTIONS = {{ value_actions | list | tojson }};
+
+function setBlockVisible(el, visible) {
+  el.style.display = visible ? (el.classList.contains('inline') ? 'flex' : 'block') : 'none';
+  el.querySelectorAll('input, select, textarea').forEach(inp => { inp.disabled = !visible; });
+}
+
+function onActionChange() {
+  const action = document.getElementById('action-select').value;
+  document.querySelectorAll('.step-form-block[data-for]').forEach(el => {
+    const visible = el.dataset.for === action;
+    el.classList.toggle('visible', visible);
+    el.querySelectorAll('input, select, textarea').forEach(inp => { inp.disabled = !visible; });
+  });
+  setBlockVisible(document.querySelector('.locator-block'), !NO_LOCATOR.includes(action));
+  setBlockVisible(document.querySelector('.value-block'), VALUE_ACTIONS.includes(action));
+  setBlockVisible(document.querySelector('.generic-value-block'), (!VALUE_ACTIONS.includes(action) && action !== 'repeat_block' && action !== 'call_macro'));
+  setBlockVisible(document.querySelector('.variable-name-block'), (action === 'extract' || action === 'execute_js'));
+  document.querySelector('.select-by-block').style.display = (action === 'select') ? 'block' : 'none';
+}
+function onConditionChange() {
+  const v = document.getElementById('condition-select').value;
+  setBlockVisible(document.querySelector('.condition-locator-block'), (v === 'if_element_present' || v === 'if_element_absent'));
+  setBlockVisible(document.querySelector('.condition-variable-block'), (v === 'if_variable_equals' || v === 'if_variable_not_equals'));
+}
+onActionChange();
+onConditionChange();
+</script>
+{% endblock %}

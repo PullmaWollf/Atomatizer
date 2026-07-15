@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dashboard</h1>
+<div class="subtitle">Visão geral do workspace <strong>{{ workspace }}</strong></div>
+
+<div class="grid">
+  <div class="card">
+    <div class="stat-value">{{ total_macros }}</div>
+    <div class="stat-label">Macros cadastrados</div>
+  </div>
+  <div class="card">
+    <div class="stat-value">{{ total_passos }}</div>
+    <div class="stat-label">Passos configurados (total)</div>
+  </div>
+  <div class="card">
+    <div class="stat-value">{{ total_agendamentos }}</div>
+    <div class="stat-label">Agendamentos ativos</div>
+  </div>
+  <div class="card">
+    <div class="stat-value">{{ workspaces | length }}</div>
+    <div class="stat-label">Workspaces</div>
+  </div>
+</div>
+
+<div class="panel">
+  <h3>Comece por aqui</h3>
+  <p style="color:var(--text-dim); font-size:13px;">
+    Crie um macro em <a href="{{ url_for('macros_list') }}" style="color:var(--cyan)">Macros</a>,
+    rode em <a href="{{ url_for('run_page') }}" style="color:var(--cyan)">Executar</a>,
+    e acompanhe tudo em tempo real em <a href="{{ url_for('logs_page') }}" style="color:var(--cyan)">Logs</a>.
+  </p>
+  <a class="btn btn-primary" href="{{ url_for('macros_list') }}">+ Ir para Macros</a>
+</div>
+{% endblock %}
