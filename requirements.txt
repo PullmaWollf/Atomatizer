@@ -1,0 +1,6 @@
+selenium>=4.15.0
+flask>=3.0.0
+rich>=13.7.0
+colorama>=0.4.6
+cryptography>=42.0.0
+schedule>=1.2.0

@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+settings.json
+workspaces/*/logs/
+workspaces/*/reports/*.csv
+workspaces/*/vault/vault.enc
+workspaces/*/vault/vault.salt
+!workspaces/default/
+_import_tmp_*
